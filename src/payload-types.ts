@@ -151,6 +151,7 @@ export interface Product {
   slug?: string | null;
   image?: (number | null) | Media;
   big_image?: (number | null) | Media;
+  color?: string | null;
   price?: number | null;
   category?: (number | null) | Category;
   preview?: (number | null) | Media;
@@ -420,6 +421,7 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   image?: T;
   big_image?: T;
+  color?: T;
   price?: T;
   category?: T;
   preview?: T;

@@ -53,6 +53,15 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      name: 'color',
+      type: 'text',
+      label: 'Color',
+      required: false,
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'price',
       type: 'number',
       label: 'Price',

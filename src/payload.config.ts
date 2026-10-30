@@ -1,6 +1,5 @@
 // storage-adapter-import-placeholder
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
-import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -14,22 +13,28 @@ import { Products } from './collections/Products'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import Orders from './collections/Orders'
 import { Ideas } from './collections/Ideas'
-import { google } from 'googleapis'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { Policies } from './collections/Policies'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GMAIL_CLIENT_ID,
-  process.env.GMAIL_CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground',
-)
+// Lazy-load googleapis so Next does not bundle it during page data collection
+async function getGmailAccessToken() {
+  const { google } = await import('googleapis')
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GMAIL_CLIENT_ID,
+    process.env.GMAIL_CLIENT_SECRET,
+    'https://developers.google.com/oauthplayground',
+  )
 
-oauth2Client.setCredentials({
-  refresh_token: process.env.GMAIL_REFRESH_TOKEN,
-})
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+  })
+
+  const { token } = await oauth2Client.getAccessToken()
+  return token
+}
 
 export default buildConfig({
   admin: {
@@ -44,9 +49,9 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  cors: {
-    origins: [`${process.env.LOCAL_FRONT_URL}`, `${process.env.WEB_FRONT_URL}`], // Allowed frontend origins
-  },
+  cors: [process.env.LOCAL_FRONT_URL, process.env.WEB_FRONT_URL].filter(
+    Boolean,
+  ) as string[],
   db: vercelPostgresAdapter({
     pool: {
       connectionString: process.env.POSTGRES_URL || '',
@@ -75,10 +80,7 @@ export default buildConfig({
         clientId: process.env.GMAIL_CLIENT_ID,
         clientSecret: process.env.GMAIL_CLIENT_SECRET,
         refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-        accessToken: async () => {
-          const { token } = await oauth2Client.getAccessToken()
-          return token
-        },
+        accessToken: getGmailAccessToken,
       },
     },
   }),

@@ -6,7 +6,6 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
   },
   auth: {
-    useAPIKey: true,
     forgotPassword: {
       generateEmailHTML: (args?: { token?: string }) => {
         const token = args?.token

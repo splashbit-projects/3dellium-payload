@@ -72,6 +72,8 @@ export default buildConfig({
   email: nodemailerAdapter({
     defaultFromName: '3Dellium',
     defaultFromAddress: 'noreply@3dellium.com',
+    // Skip SMTP verify during Vercel build (Gmail OAuth often fails there)
+    skipVerify: true,
     transportOptions: {
       service: 'gmail',
       auth: {

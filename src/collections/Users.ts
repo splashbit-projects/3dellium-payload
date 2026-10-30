@@ -1,4 +1,4 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -6,6 +6,7 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
   },
   auth: {
+    useAPIKey: true,
     forgotPassword: {
       generateEmailHTML: (args?: { token?: string }) => {
         const token = args?.token
@@ -127,12 +128,29 @@ export const Users: CollectionConfig = {
     },
   },
   access: {
-    /*read: function (args: { req: PayloadRequest }) {
-      return args.req.user?.role === 'admin'
-    },*/
+    // Only admins can access Payload admin UI (and thus manage API keys)
+    admin: ({ req }) => req.user?.role === 'admin',
     read: () => true,
     create: () => true,
     update: () => true,
+  },
+  hooks: {
+    beforeChange: [
+      ({ data, req, originalDoc }) => {
+        if (!data) return data
+
+        const role = data.role ?? originalDoc?.role
+        const actorIsAdmin = req.user?.role === 'admin'
+
+        // API keys only for admin users, and only admins may enable them
+        if (!actorIsAdmin || role !== 'admin') {
+          data.enableAPIKey = false
+          delete data.apiKey
+        }
+
+        return data
+      },
+    ],
   },
   fields: [
     {
